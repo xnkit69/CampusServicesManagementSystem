@@ -50,9 +50,11 @@ export const TopBar = ({ session, title }) => {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer">
-            Profile
-          </DropdownMenuItem>
+          <Link href="/profile" passHref>
+            <DropdownMenuItem className="cursor-pointer">
+              Profile
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuItem className="cursor-pointer">Wallet</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
