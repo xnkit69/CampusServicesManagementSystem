@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,6 +36,7 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { TopBar } from "@/components/ui/topbar";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // type PrintStatus = 'processing' | 'printing' | 'done'
 
@@ -53,6 +54,26 @@ export default function PrinterServicesPage() {
     { id: 3, name: "Document 3", status: "done" },
   ]);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session && status !== "loading") {
+      router.push("/");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return router.push("/");
+  }
 
   const handleCancelPrint = (id) => {
     setPrintJobs(printJobs.filter((job) => job.id !== id));
@@ -179,8 +200,6 @@ export default function PrinterServicesPage() {
       ))}
     </ScrollArea>
   );
-
-  const { data: session, status } = useSession();
 
   return (
     <>

@@ -11,8 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CreditCard, Mail, User } from "lucide-react";
+import { CreditCard, Mail } from "lucide-react";
 import { TopBar } from "@/components/ui/topbar";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 // interface ProfilePageProps {
 //   session: {
@@ -27,6 +29,26 @@ import { TopBar } from "@/components/ui/topbar";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session && status !== "loading") {
+      router.push("/");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return router.push("/");
+  }
+
   const walletBalance = 0; // #TODO: Replace with actual wallet balance
   return (
     <>

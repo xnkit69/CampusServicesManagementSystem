@@ -27,7 +27,7 @@ export default function ServiceSelection() {
   }
 
   if (!session) {
-    return null;
+    return router.push("/");
   }
 
   return (
