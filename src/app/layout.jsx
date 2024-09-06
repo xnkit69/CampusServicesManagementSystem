@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../components/AuthProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   title: "Campus Services Management System",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>{children}</AuthProvider>
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
