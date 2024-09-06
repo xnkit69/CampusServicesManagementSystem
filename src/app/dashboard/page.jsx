@@ -1,66 +1,12 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PrinterIcon, SettingsIcon } from "lucide-react";
-
-function getInitials(name) {
-  const words = name.split(" ").filter((word) => word.length > 0);
-  if (words.length === 0) return "";
-  if (words.length === 1) return words[0][0].toUpperCase();
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-}
-
-const TopBar = ({ session }) => {
-  const { toast } = useToast();
-  return (
-    <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
-      <div className="font-bold text-xl">CSMS</div>
-      <div className="text-lg font-semibold">Services</div>
-      <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Avatar>
-            <AvatarImage src={session.user.image} />
-            <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel>{session.user.name}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Wallet</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive"
-            onClick={() => {
-              toast({
-                variant: "destructive",
-                title: "Logged Out!",
-                description: "Redirecting to login page...",
-              });
-              signOut();
-            }}
-          >
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
-};
+import { TopBar } from "@/components/ui/topbar";
 
 export default function ServiceSelection() {
   const { data: session, status } = useSession();
@@ -86,7 +32,7 @@ export default function ServiceSelection() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar session={session} />
+      <TopBar session={session} title={"Dashboard"} />
       <main className="container mx-auto p-6">
         <Card className="mb-6">
           <CardHeader>
