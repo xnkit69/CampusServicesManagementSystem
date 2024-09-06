@@ -13,54 +13,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PrinterIcon, SettingsIcon } from "lucide-react";
 
 function getInitials(name) {
   const words = name.split(" ").filter((word) => word.length > 0);
-
-  if (words.length === 0) {
-    return "";
-  }
-
-  if (words.length === 1) {
-    // If there's only one word, return the first letter
-    return words[0][0].toUpperCase();
-  }
-
-  // Return the first letter of the first word and the first letter of the last word
+  if (words.length === 0) return "";
+  if (words.length === 1) return words[0][0].toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-const TopBar = (session) => {
+const TopBar = ({ session }) => {
   const { toast } = useToast();
   return (
-    <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+    <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
       <div className="font-bold text-xl">CSMS</div>
-      <div className="text-lg font-semibold">
-        <b>Dashboard</b>
-      </div>
+      <div className="text-lg font-semibold">Services</div>
       <DropdownMenu>
         <DropdownMenuTrigger>
           <Avatar>
-            <AvatarImage src={session.session.user.image} />
-            <AvatarFallback>
-              {getInitials(session.session.user.name)}
-            </AvatarFallback>
+            <AvatarImage src={session.user.image} />
+            <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuLabel>{session.session.user.name}</DropdownMenuLabel>
+          <DropdownMenuLabel>{session.user.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Profile</DropdownMenuItem>{" "}
-          {/* TODO: Add profile page */}
-          <DropdownMenuItem>Wallet</DropdownMenuItem>{" "}
-          {/* TODO: Add wallet page */}
+          <DropdownMenuItem>Profile</DropdownMenuItem>
+          <DropdownMenuItem>Wallet</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-500"
+            className="text-destructive"
             onClick={() => {
               toast({
                 variant: "destructive",
-                title: "Logged Out!.",
+                title: "Logged Out!",
                 description: "Redirecting to login page...",
               });
               signOut();
@@ -74,50 +62,98 @@ const TopBar = (session) => {
   );
 };
 
-export default function Dashboard() {
+export default function ServiceSelection() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     if (!session && status !== "loading") {
-      router.push("/"); // Redirect to home if not signed in
+      router.push("/");
     }
   }, [session, status, router]);
 
   if (status === "loading") {
     return (
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   if (!session) {
-    return null; // Prevents rendering before redirection occurs
+    return null;
   }
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-background">
       <TopBar session={session} />
       <main className="container mx-auto p-6">
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Welcome to your Dashboard
-          </h1>
-          <h2 className="text-xl text-gray-600">Hello, {session.user.name}</h2>
-        </div>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold">
+              Choose a Service
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl text-muted-foreground">
+              Select from our available services below
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-          <button
-            onClick={() => router.push("/printer")}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
-          >
-            Printer Services
-          </button>
-          <button
-            onClick={() => router.push("/x")}
-            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
-          >
-            Service X
-          </button>
-          {/* Add more service buttons here */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PrinterIcon className="mr-2 h-6 w-6" />
+                Printer Services
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Manage your printing needs with our comprehensive printer
+                services.
+              </p>
+              <ul className="list-disc list-inside mb-4 text-sm text-muted-foreground">
+                <li>Print document management</li>
+                <li>Printer maintenance and support</li>
+                <li>Ink and toner supply management</li>
+              </ul>
+              <Button
+                onClick={() => router.push("/printer")}
+                className="w-full"
+                variant="default"
+              >
+                Access Printer Services
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <SettingsIcon className="mr-2 h-6 w-6" />
+                Service X
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Explore our innovative Service X for advanced solutions.
+              </p>
+              <ul className="list-disc list-inside mb-4 text-sm text-muted-foreground">
+                <li>Feature 1 of Service X</li>
+                <li>Feature 2 of Service X</li>
+                <li>Feature 3 of Service X</li>
+              </ul>
+              <Button
+                onClick={() => router.push("/x")}
+                className="w-full"
+                variant="default"
+              >
+                Access Service X
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
