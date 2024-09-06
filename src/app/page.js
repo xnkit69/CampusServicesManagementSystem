@@ -1,17 +1,13 @@
-import dynamic from "next/dynamic";
-
-const DynamicHomeContent = dynamic(() => import("../components/HomeContent"), {
-  ssr: false,
-});
+import HomeContent from "@/components/HomeContent";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <main className="text-center">
-        <h1 className="text-4xl font-bold mb-8">
+    <div className="container mx-auto px-4 py-8">
+      <main className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 className="text-4xl font-bold mb-8 text-primary">
           Campus Services Management System
         </h1>
-        <DynamicHomeContent />
+        <HomeContent />
       </main>
     </div>
   );

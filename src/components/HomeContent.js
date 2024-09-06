@@ -1,50 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { signIn, signOut } from "next-auth/react";
+import { Loader2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export default function HomeContent() {
-  const [isMounted, setIsMounted] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (status === "authenticated") {
+      let timer = setTimeout(() => {
+        router.push("/dashboard");
+      }, 3000); // Redirect after 3 seconds
 
-  useEffect(() => {
-    if (isMounted && status === "authenticated") {
-      router.push("/dashboard"); // Adjusted navigation for App Router
+      // Simulate progress
+      let interval = setInterval(() => {
+        setProgress((prevProgress) => {
+          if (prevProgress >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prevProgress + 10;
+        });
+      }, 300);
+
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
     }
-  }, [isMounted, status, router]);
+  }, [status, router]);
 
-  if (!isMounted || status === "loading") {
+  if (status === "loading") {
     return (
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      <Card className="w-[350px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (session) {
     return (
-      <>
-        <p>Signed in as {session.user.email}</p>
-        <button
-          onClick={() => signOut()}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4"
-        >
-          Sign out
-        </button>
-      </>
+      <Card className="w-[350px]">
+        <CardHeader>
+          <CardTitle>Welcome, {session.user.name}</CardTitle>
+          <CardDescription>Redirecting to your dashboard...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Progress value={progress} className="w-full" />
+            <p className="text-sm text-muted-foreground text-center">
+              Loading your personalized dashboard
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <button
-      onClick={() => signIn("google")}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    >
-      Sign in with Google
-    </button>
+    <Card className="w-[350px]">
+      <CardHeader>
+        <CardTitle>Get Started</CardTitle>
+        <CardDescription>Sign in to access campus services</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={() => signIn("google")} className="w-full">
+          Sign in with Google
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
