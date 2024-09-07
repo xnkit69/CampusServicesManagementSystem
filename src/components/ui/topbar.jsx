@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HomeIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -28,7 +27,6 @@ export const TopBar = ({ session, title }) => {
   return (
     <div className="bg-primary text-primary-foreground px-4 py-3 flex justify-between items-center shadow-md">
       <Link href="/dashboard" className="flex items-center">
-        <HomeIcon size={24} className="inline-block mr-2" />
         <span className="font-bold text-xl tracking-tight cursor-pointer">
           CSMS
         </span>
