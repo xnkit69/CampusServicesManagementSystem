@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Script from "next/script";
 import {
   Card,
@@ -43,7 +44,7 @@ export default function ProfilePage() {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isAddFundsDialogOpen, setIsAddFundsDialogOpen] = useState(false);
   const [fundAmount, setFundAmount] = useState(10);
-  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(null);
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -323,9 +324,13 @@ export default function ProfilePage() {
                     <IndianRupee className="h-12 w-12 text-primary" />
                   </div>
                   <div>
-                    <p className="text-4xl font-bold">
-                      ₹{walletBalance.toFixed(2)}
-                    </p>
+                    {walletBalance !== null ? (
+                      <p className="text-4xl font-bold">
+                        ₹{walletBalance.toFixed(2)}
+                      </p>
+                    ) : (
+                      <Skeleton className="h-10 w-32" />
+                    )}
                     <p className="text-sm text-muted-foreground">
                       Available balance
                     </p>
