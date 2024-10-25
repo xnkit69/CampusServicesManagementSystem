@@ -28,6 +28,8 @@ import {
   IndianRupee,
   User,
   Clock,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { TopBar } from "@/components/ui/topbar";
 import { useRouter } from "next/navigation";
@@ -38,6 +40,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isAddFundsDialogOpen, setIsAddFundsDialogOpen] = useState(false);
+  const [fundAmount, setFundAmount] = useState(10);
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -69,12 +73,26 @@ export default function ProfilePage() {
     signOut();
   };
 
+  const handleAddFunds = () => {
+    // TODO: Implement the actual fund addition logic here
+    setIsAddFundsDialogOpen(false);
+    toast({
+      title: "Funds Added",
+      description: `₹${fundAmount} has been added to your wallet.`,
+    });
+  };
+
+  const adjustFundAmount = (amount) => {
+    setFundAmount((prev) => Math.max(0, prev + amount));
+  };
+
   return (
     <>
       <TopBar session={session.data} title={"Profile"} />
 
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Personal Profile Card */}
           <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -152,6 +170,7 @@ export default function ProfilePage() {
             </CardFooter>
           </Card>
 
+          {/* Wallet Card */}
           <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -192,13 +211,49 @@ export default function ProfilePage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                <IndianRupee className="mr-2 h-4 w-4" /> Add Funds
-              </Button>
+              <Dialog
+                open={isAddFundsDialogOpen}
+                onOpenChange={setIsAddFundsDialogOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    <IndianRupee className="mr-2 h-4 w-4" /> Add Funds
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Funds to Your Wallet</DialogTitle>
+                    <DialogDescription>
+                      Select the amount you want to add to your wallet.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex items-center justify-center space-x-4 py-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustFundAmount(-5)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <div className="text-4xl font-bold">₹{fundAmount}</div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustFundAmount(5)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddFunds}>Confirm</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardFooter>
           </Card>
         </div>
 
+        {/* Recent Activity Log Card */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
