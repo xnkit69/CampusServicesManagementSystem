@@ -43,12 +43,44 @@ export default function ProfilePage() {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isAddFundsDialogOpen, setIsAddFundsDialogOpen] = useState(false);
   const [fundAmount, setFundAmount] = useState(10);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
       router.push("/");
     }
   }, [session.status, router]);
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (session.status !== "authenticated" || !session.data?.user?.email)
+        return;
+
+      try {
+        const response = await fetch(`/api/users/balance/getBalance`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: session.data.user.email }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch wallet balance");
+        }
+        const data = await response.json();
+        setWalletBalance(data.balance);
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch wallet balance. Please try again.",
+        });
+      }
+    };
+
+    fetchWalletBalance();
+  }, [session.status, session.data?.user?.email, toast]);
 
   if (session.status === "loading") {
     return (
@@ -61,8 +93,6 @@ export default function ProfilePage() {
   if (session.status !== "authenticated") {
     return null;
   }
-
-  const walletBalance = 0; // #TODO: Replace with actual wallet balance
 
   const createOrderId = async () => {
     try {
@@ -121,8 +151,30 @@ export default function ProfilePage() {
             headers: { "Content-Type": "application/json" },
           });
           const res = await result.json();
-          if (res.isOk) alert("payment succeed");
-          else {
+          if (res.isOk) {
+            // alert("payment succeed");
+
+            const updateBalanceRes = await fetch(
+              "/api/users/balance/updateBalance",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  email: session.data.user.email,
+                  amount: fundAmount,
+                }),
+              }
+            );
+
+            if (updateBalanceRes.ok) {
+              // alert("balance updated");
+              // Update the wallet balance in the UI
+              setWalletBalance(
+                (prevBalance) => prevBalance + parseFloat(fundAmount)
+              );
+            } else {
+              alert("Failed to update balance");
+            }
+          } else {
             alert(res.message);
           }
         },
@@ -146,6 +198,8 @@ export default function ProfilePage() {
           "There was a problem processing your payment. Please try again.",
       });
     }
+
+    setFundAmount(10); // reset fund amount
   };
 
   const handleLogout = () => {
