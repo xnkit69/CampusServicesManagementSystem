@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import Script from "next/script";
 import {
   Card,
   CardContent,
@@ -63,6 +64,90 @@ export default function ProfilePage() {
 
   const walletBalance = 0; // #TODO: Replace with actual wallet balance
 
+  const createOrderId = async () => {
+    try {
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: parseFloat(fundAmount * 100),
+          currency: "INR",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.orderId;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create order. Please try again.",
+      });
+      throw error;
+    }
+  };
+
+  const processPayment = async (e) => {
+    e.preventDefault();
+    setIsAddFundsDialogOpen(false);
+
+    try {
+      const orderId = await createOrderId();
+      const options = {
+        key: process.env.RAZORPAY_KEY_ID,
+        amount: parseFloat(fundAmount) * 100,
+        currency: "INR",
+        name: session.data.user.name,
+        description: "Add funds to wallet",
+        order_id: orderId,
+        handler: async function (response) {
+          const data = {
+            orderCreationId: orderId,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+          };
+
+          const result = await fetch("/api/verify", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers: { "Content-Type": "application/json" },
+          });
+          const res = await result.json();
+          if (res.isOk) alert("payment succeed");
+          else {
+            alert(res.message);
+          }
+        },
+        prefill: {
+          name: session.data.user.name,
+          email: session.data.user.email,
+        },
+        theme: {
+          color: "#1a1a1a",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      toast({
+        variant: "destructive",
+        title: "Payment Error",
+        description:
+          "There was a problem processing your payment. Please try again.",
+      });
+    }
+  };
+
   const handleLogout = () => {
     setIsLogoutDialogOpen(false);
     toast({
@@ -73,21 +158,17 @@ export default function ProfilePage() {
     signOut();
   };
 
-  const handleAddFunds = () => {
-    // TODO: Implement the actual fund addition logic here
-    setIsAddFundsDialogOpen(false);
-    toast({
-      title: "Funds Added",
-      description: `₹${fundAmount} has been added to your wallet.`,
-    });
-  };
-
   const adjustFundAmount = (amount) => {
     setFundAmount((prev) => Math.max(0, prev + amount));
   };
 
   return (
     <>
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
+
       <TopBar session={session.data} title={"Profile"} />
 
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -245,7 +326,7 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleAddFunds}>Confirm</Button>
+                    <Button onClick={processPayment}>Confirm</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
