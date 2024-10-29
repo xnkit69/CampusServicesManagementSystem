@@ -25,7 +25,7 @@ export const TopBar = ({ session, title }) => {
   };
 
   return (
-    <div className="bg-primary text-primary-foreground px-4 py-3 flex justify-between items-center shadow-md">
+    <div className="bg-primary text-primary-foreground px-4 py-3 flex justify-between items-center shadow-md sticky top-0 z-50">
       <Link href="/dashboard" className="flex items-center">
         <span className="font-bold text-xl tracking-tight cursor-pointer">
           CSMS
