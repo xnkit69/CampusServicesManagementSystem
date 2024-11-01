@@ -118,39 +118,61 @@ export default function Component() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
+      <style jsx global>{`
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: hsl(var(--primary)) hsl(var(--secondary));
+        }
+        *::-webkit-scrollbar {
+          width: 8px;
+        }
+        *::-webkit-scrollbar-track {
+          background: hsl(var(--secondary));
+        }
+        *::-webkit-scrollbar-thumb {
+          background-color: hsl(var(--primary));
+          border-radius: 20px;
+          border: 2px solid hsl(var(--secondary));
+        }
+        *::-webkit-scrollbar-thumb:hover {
+          background-color: hsl(var(--primary) / 0.8);
+        }
+      `}</style>
       <TopBar session={session} title="Dashboard" />
-      <main className="container mx-auto p-6">
-        {sections.map((section, index) => (
-          <div key={index} className="mb-12 bg-secondary rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6">{section.title}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {section.cards.map((card, cardIndex) => (
-                <Card
-                  key={cardIndex}
-                  className="hover:shadow-lg transition-shadow duration-300"
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <card.icon className="mr-2 h-6 w-6" />
-                      {card.title}
-                    </CardTitle>
-                    <CardDescription>{card.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      onClick={() => router.push(card.route)}
-                      className="w-full"
-                      variant="default"
-                    >
-                      Access {card.title}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+      <main className="flex-grow overflow-y-auto">
+        <div className="container mx-auto p-6 space-y-12">
+          {sections.map((section, index) => (
+            <div key={index} className="bg-secondary rounded-lg p-6">
+              <h2 className="text-2xl font-bold mb-6">{section.title}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {section.cards.map((card, cardIndex) => (
+                  <Card
+                    key={cardIndex}
+                    className="hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <card.icon className="mr-2 h-6 w-6" />
+                        {card.title}
+                      </CardTitle>
+                      <CardDescription>{card.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button
+                        onClick={() => router.push(card.route)}
+                        className="w-full"
+                        variant="default"
+                      >
+                        Access {card.title}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </main>
     </div>
   );
