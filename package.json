@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "csms": "file:",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.436.0",
     "mongodb": "^6.10.0",
     "next": "^14.2.15",

@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { MongoClient } from "mongodb";
-
-const uri = process.env.MONGO_URI;
-const client = new MongoClient(uri);
+import clientPromise from "@/lib/mongodb";
 
 export async function POST(request) {
   let oldBalance = 0;
   try {
     const { email, amount } = await request.json();
-    await client.connect();
+    const client = await clientPromise;
     const database = client.db("CampusServicesManagementSystem");
     const users = database.collection("users");
 
@@ -26,11 +23,30 @@ export async function POST(request) {
     let result;
     // Update the user's balance
     if (newUser) {
-      result = await users.insertOne({ email, balance: newBalance });
+      result = await users.insertOne({
+        email,
+        balance: newBalance,
+        transactions: [
+          {
+            transactionType: "deposit",
+            transactionAmount: amount,
+            timestamp: new Date(),
+          },
+        ],
+      });
     } else {
       result = await users.updateOne(
         { email },
-        { $set: { balance: newBalance } }
+        {
+          $set: { balance: newBalance },
+          $push: {
+            transactions: {
+              transactionType: "deposit",
+              transactionAmount: amount,
+              timestamp: new Date(),
+            },
+          },
+        }
       );
     }
 
@@ -48,7 +64,5 @@ export async function POST(request) {
       { error: "Failed to update balance" },
       { status: 500 }
     );
-  } finally {
-    await client.close();
   }
 }

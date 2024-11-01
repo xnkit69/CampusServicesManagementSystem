@@ -36,6 +36,7 @@ import {
 import { TopBar } from "@/components/ui/topbar";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 
 export default function ProfilePage() {
   const session = useSession();
@@ -45,6 +46,7 @@ export default function ProfilePage() {
   const [isAddFundsDialogOpen, setIsAddFundsDialogOpen] = useState(false);
   const [fundAmount, setFundAmount] = useState(10);
   const [walletBalance, setWalletBalance] = useState(null);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -52,36 +54,66 @@ export default function ProfilePage() {
     }
   }, [session.status, router]);
 
-  useEffect(() => {
-    const fetchWalletBalance = async () => {
-      if (session.status !== "authenticated" || !session.data?.user?.email)
-        return;
+  const fetchWalletBalance = async () => {
+    if (session.status !== "authenticated" || !session.data?.user?.email)
+      return;
 
-      try {
-        const response = await fetch(`/api/users/balance/getBalance`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: session.data.user.email }),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to fetch wallet balance");
-        }
-        const data = await response.json();
-        setWalletBalance(data.balance);
-      } catch (error) {
-        console.error("Error fetching wallet balance:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch wallet balance. Please try again.",
-        });
+    try {
+      const response = await fetch(`/api/users/balance/getBalance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: session.data.user.email }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch wallet balance");
       }
-    };
+      const data = await response.json();
+      setWalletBalance(data.balance);
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch wallet balance. Please try again.",
+      });
+    }
+  };
 
+  const fetchTransactions = async () => {
+    if (session.status !== "authenticated" || !session.data?.user?.email)
+      return;
+
+    try {
+      const response = await fetch(`/api/users/balance/getTransactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: session.data.user.email }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setTransactions(result.data.transactions.reverse() || []);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch transaction history.",
+      });
+    }
+  };
+
+  useEffect(() => {
     fetchWalletBalance();
-  }, [session.status, session.data?.user?.email, toast]);
+    fetchTransactions();
+  }, [session.status, session.data?.user?.email]);
 
   if (session.status === "loading") {
     return (
@@ -133,9 +165,9 @@ export default function ProfilePage() {
       const orderId = await createOrderId();
       const options = {
         key: process.env.RAZORPAY_KEY_ID,
-        amount: parseFloat(fundAmount) * 100,
+        amount: parseFloat(fundAmount.toString()) * 100,
         currency: "INR",
-        name: session.data.user.name,
+        name: session.data.user.name || "",
         description: "Add funds to wallet",
         order_id: orderId,
         handler: async function (response) {
@@ -153,8 +185,6 @@ export default function ProfilePage() {
           });
           const res = await result.json();
           if (res.isOk) {
-            // alert("payment succeed");
-
             const updateBalanceRes = await fetch(
               "/api/users/balance/updateBalance",
               {
@@ -167,16 +197,25 @@ export default function ProfilePage() {
             );
 
             if (updateBalanceRes.ok) {
-              // alert("balance updated");
-              // Update the wallet balance in the UI
               setWalletBalance(
-                (prevBalance) => prevBalance + parseFloat(fundAmount)
+                (prevBalance) =>
+                  (prevBalance || 0) + parseFloat(fundAmount.toString())
               );
+              // Fetch updated transactions after successful payment
+              await fetchTransactions();
             } else {
-              alert("Failed to update balance");
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to update balance",
+              });
             }
           } else {
-            alert(res.message);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: res.message,
+            });
           }
         },
         prefill: {
@@ -217,6 +256,23 @@ export default function ProfilePage() {
     setFundAmount((prev) => Math.max(0, prev + amount));
   };
 
+  function formatDateTime(timestamp) {
+    const date = new Date(timestamp);
+
+    // Add leading zeros to single digits
+    const padZero = (num) => num.toString().padStart(2, "0");
+
+    return {
+      date: `${padZero(date.getDate())}/${padZero(
+        date.getMonth() + 1
+      )}/${date.getFullYear()}`,
+      time: `${padZero(date.getHours())}:${padZero(
+        date.getMinutes()
+      )}:${padZero(date.getSeconds())}`,
+      year: date.getFullYear(),
+    };
+  }
+
   return (
     <>
       <Script
@@ -245,8 +301,8 @@ export default function ProfilePage() {
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-20 w-20">
                       <AvatarImage
-                        src={session.data.user.image}
-                        alt={session.data.user.name}
+                        src={session.data.user.image || undefined}
+                        alt={session.data.user.name || "User"}
                       />
                       <AvatarFallback>
                         {session.data.user.name?.charAt(0)}
@@ -381,7 +437,7 @@ export default function ProfilePage() {
                       size="icon"
                       onClick={() => adjustFundAmount(5)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-4  w-4" />
                     </Button>
                   </div>
                   <DialogFooter>
@@ -405,9 +461,66 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              No recent activity to display.
-            </p>
+            {transactions.length > 0 ? (
+              <div className="space-y-4">
+                {transactions.map((transaction, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b pb-4 last:border-b-0"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`p-2 rounded-full ${
+                          transaction.transactionType === "deposit"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {transaction.transactionType === "deposit" ? (
+                          <Plus className="h-4 w-4" />
+                        ) : (
+                          <Minus className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium capitalize">
+                          {transaction.transactionType}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {transaction.timestamp
+                            ? formatDistanceToNow(
+                                new Date(transaction.timestamp.toString()),
+                                {
+                                  addSuffix: true,
+                                }
+                              )
+                            : "Date unknown"}
+                        </p>
+                        {transaction.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {transaction.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <p
+                      className={`font-medium ${
+                        transaction.transactionType === "deposit"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transaction.transactionType === "deposit" ? "+" : "-"}₹
+                      {transaction.transactionAmount.toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">
+                No recent activity to display.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
