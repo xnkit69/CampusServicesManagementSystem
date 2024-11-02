@@ -28,8 +28,8 @@ export async function POST(request) {
         balance: newBalance,
         transactions: [
           {
-            transactionType: "deposit",
-            transactionAmount: amount,
+            transactionType: amount > 0 ? "deposit" : "withdrawal",
+            transactionAmount: Math.abs(amount),
             timestamp: new Date(),
           },
         ],
@@ -41,8 +41,8 @@ export async function POST(request) {
           $set: { balance: newBalance },
           $push: {
             transactions: {
-              transactionType: "deposit",
-              transactionAmount: amount,
+              transactionType: amount > 0 ? "deposit" : "withdrawal",
+              transactionAmount: Math.abs(amount),
               timestamp: new Date(),
             },
           },

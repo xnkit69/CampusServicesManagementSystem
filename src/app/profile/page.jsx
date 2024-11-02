@@ -32,6 +32,7 @@ import {
   Clock,
   Plus,
   Minus,
+  Landmark,
 } from "lucide-react";
 import { TopBar } from "@/components/ui/topbar";
 import { useRouter } from "next/navigation";
@@ -47,6 +48,7 @@ export default function ProfilePage() {
   const [fundAmount, setFundAmount] = useState(10);
   const [walletBalance, setWalletBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -111,8 +113,12 @@ export default function ProfilePage() {
   }, [session.status, session.data?.user?.email, toast]);
 
   useEffect(() => {
-    fetchWalletBalance();
-    fetchTransactions();
+    const fetchData = async () => {
+      await fetchWalletBalance();
+      await fetchTransactions();
+      setIsLoadingTransactions(false);
+    };
+    fetchData();
   }, [fetchWalletBalance, fetchTransactions]);
 
   if (session.status === "loading") {
@@ -377,7 +383,7 @@ export default function ProfilePage() {
               <div className="flex flex-col h-full justify-between">
                 <div className="flex items-center justify-center space-x-4 mb-6">
                   <div className="bg-primary/10 p-4 rounded-full">
-                    <IndianRupee className="h-12 w-12 text-primary" />
+                    <Landmark className="h-10 w-10 text-primary" />
                   </div>
                   <div>
                     {walletBalance !== null ? (
@@ -461,7 +467,9 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {transactions.length > 0 ? (
+            {isLoadingTransactions ? (
+              <Skeleton className="h-32" />
+            ) : transactions.length > 0 ? (
               <div className="space-y-4">
                 {transactions.map((transaction, index) => (
                   <div
