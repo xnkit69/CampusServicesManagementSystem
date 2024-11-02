@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 function getInitials(name) {
   const words = name.split(" ").filter((word) => word.length > 0);
@@ -27,9 +28,7 @@ export const TopBar = ({ session, title }) => {
   return (
     <div className="bg-primary text-primary-foreground px-4 py-3 flex justify-between items-center shadow-md sticky top-0 z-50">
       <Link href="/dashboard" className="flex items-center">
-        <span className="font-bold text-xl tracking-tight cursor-pointer">
-          CSMS
-        </span>
+        <Image src="/CSMS.png" alt="CSMS" width={25} height={25} />
       </Link>
       <div className="text-lg font-semibold">{title}</div>
       <button onClick={handleProfileClick} className="focus:outline-none">
