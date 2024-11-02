@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { TopBar } from "@/components/ui/topbar";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function ProfilePage() {
@@ -54,7 +54,7 @@ export default function ProfilePage() {
     }
   }, [session.status, router]);
 
-  const fetchWalletBalance = async () => {
+  const fetchWalletBalance = useCallback(async () => {
     if (session.status !== "authenticated" || !session.data?.user?.email)
       return;
 
@@ -79,9 +79,9 @@ export default function ProfilePage() {
         description: "Failed to fetch wallet balance. Please try again.",
       });
     }
-  };
+  }, [session.status, session.data?.user?.email, toast]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (session.status !== "authenticated" || !session.data?.user?.email)
       return;
 
@@ -108,12 +108,12 @@ export default function ProfilePage() {
         description: "Failed to fetch transaction history.",
       });
     }
-  };
+  }, [session.status, session.data?.user?.email, toast]);
 
   useEffect(() => {
     fetchWalletBalance();
     fetchTransactions();
-  }, [session.status, session.data?.user?.email]);
+  }, [fetchWalletBalance, fetchTransactions]);
 
   if (session.status === "loading") {
     return (
