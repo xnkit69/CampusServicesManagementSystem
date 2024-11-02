@@ -24,10 +24,16 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ChevronDownCircleIcon,
-  ChevronUpCircleIcon,
-  Coffee,
+  ChevronDownCircle,
+  ChevronUpCircle,
+  Drumstick,
+  Fish,
+  Ham,
+  HandPlatter,
+  Pizza,
   ShoppingCart,
+  Utensils,
+  Vegan,
   Wallet,
 } from "lucide-react";
 import {
@@ -39,12 +45,21 @@ import {
 import { Label } from "@/components/ui/label";
 
 const items = [
-  { id: 1, name: "Coffee", price: 15, icon: Coffee },
-  { id: 2, name: "Tea", price: 10, icon: Coffee },
-  { id: 3, name: "Latte", price: 25, icon: Coffee },
-  { id: 4, name: "Espresso", price: 20, icon: Coffee },
-  { id: 5, name: "Hot Chocolate", price: 30, icon: Coffee },
-  { id: 6, name: "Green Tea", price: 15, icon: Coffee },
+  //   { id: 1, name: "Coffee", price: 15, icon: Coffee },
+  //   { id: 2, name: "Tea", price: 10, icon: Coffee },
+  //   { id: 3, name: "Latte", price: 25, icon: Coffee },
+  //   { id: 4, name: "Espresso", price: 20, icon: Coffee },
+  //   { id: 5, name: "Hot Chocolate", price: 30, icon: Coffee },
+  //   { id: 6, name: "Green Tea", price: 15, icon: Coffee },
+
+  { iid: 1, name: "Parotta", price: 15, icon: Pizza },
+  { id: 2, name: "Biriyani", price: 10, icon: HandPlatter },
+  { id: 3, name: "Chapatti", price: 25, icon: Utensils },
+  { id: 4, name: "Chicken Curry", price: 20, icon: Drumstick },
+  { id: 5, name: "Beef Curry", price: 30, icon: Ham },
+  { id: 6, name: "Fish Curry", price: 30, icon: Fish },
+  { id: 7, name: "Veg Curry", price: 15, icon: Vegan },
+  { id: 8, name: "Meals", price: 50, icon: HandPlatter },
 ];
 
 export default function VendingMachinePage() {
@@ -247,9 +262,9 @@ export default function VendingMachinePage() {
                 onClick={() => setIsBalanceSummaryOpen((prev) => !prev)}
               >
                 {isBalanceSummaryOpen ? (
-                  <ChevronUpCircleIcon />
+                  <ChevronUpCircle />
                 ) : (
-                  <ChevronDownCircleIcon />
+                  <ChevronDownCircle />
                 )}
                 Balance Summary
               </Button>
