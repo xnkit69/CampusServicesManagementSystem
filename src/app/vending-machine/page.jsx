@@ -13,14 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -35,6 +34,9 @@ import {
   Utensils,
   Vegan,
   Wallet,
+  Plus,
+  Minus,
+  X,
 } from "lucide-react";
 import {
   Tooltip,
@@ -43,16 +45,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const items = [
-  //   { id: 1, name: "Coffee", price: 15, icon: Coffee },
-  //   { id: 2, name: "Tea", price: 10, icon: Coffee },
-  //   { id: 3, name: "Latte", price: 25, icon: Coffee },
-  //   { id: 4, name: "Espresso", price: 20, icon: Coffee },
-  //   { id: 5, name: "Hot Chocolate", price: 30, icon: Coffee },
-  //   { id: 6, name: "Green Tea", price: 15, icon: Coffee },
-
-  { iid: 1, name: "Parotta", price: 15, icon: Pizza },
+  { id: 1, name: "Parotta", price: 15, icon: Pizza },
   { id: 2, name: "Biriyani", price: 10, icon: HandPlatter },
   { id: 3, name: "Chapatti", price: 25, icon: Utensils },
   { id: 4, name: "Chicken Curry", price: 20, icon: Drumstick },
@@ -66,12 +63,13 @@ export default function VendingMachinePage() {
   const session = useSession();
   const router = useRouter();
   const { toast } = useToast();
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState({});
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
-  const [orders, setOrders] = useState([]); // You'll need to fetch this from your API
-  const [isChecked, setIsChecked] = useState(false); // New state for checkbox
-  const [isBalanceSummaryOpen, setIsBalanceSummaryOpen] = useState(false); // State for expandable balance summary
+  const [orders, setOrders] = useState([]);
+  const [isBalanceSummaryOpen, setIsBalanceSummaryOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   const fetchWalletBalance = useCallback(async () => {
     if (session.status !== "authenticated" || !session.data?.user?.email)
@@ -105,17 +103,23 @@ export default function VendingMachinePage() {
     fetchWalletBalance();
   }, [session.status, router, fetchWalletBalance]);
 
-  const totalCost = selectedItems.reduce((sum, itemId) => {
-    const item = items.find((i) => i.id === itemId);
-    return sum + (item?.price || 0);
-  }, 0);
+  const totalCost = Object.entries(selectedItems).reduce(
+    (sum, [id, quantity]) => {
+      const item = items.find((i) => i.id === parseInt(id));
+      return sum + (item?.price || 0) * quantity;
+    },
+    0
+  );
 
-  const handleCheckboxChange = (itemId) => {
-    setSelectedItems((current) =>
-      current.includes(itemId)
-        ? current.filter((id) => id !== itemId)
-        : [...current, itemId]
-    );
+  const handleQuantityChange = (itemId, change) => {
+    setSelectedItems((prev) => {
+      const newQuantity = (prev[itemId] || 0) + change;
+      if (newQuantity <= 0) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [itemId]: newQuantity };
+    });
   };
 
   const handlePurchase = async () => {
@@ -145,15 +149,16 @@ export default function VendingMachinePage() {
         description: `Your order will be ready shortly!`,
       });
       setIsConfirmDialogOpen(false);
-      setSelectedItems([]);
+      setSelectedItems({});
+      setIsConfirmed(false);
       fetchWalletBalance();
 
-      // #TODO: replace with API
       setOrders((current) => [
         {
-          items: selectedItems.map(
-            (itemId) => items.find((i) => i.id === itemId).name
-          ),
+          items: Object.entries(selectedItems).map(([id, quantity]) => {
+            const item = items.find((i) => i.id === parseInt(id));
+            return `${item.name} x${quantity}`;
+          }),
           total: totalCost,
           status: "Processing",
         },
@@ -182,7 +187,7 @@ export default function VendingMachinePage() {
   return (
     <>
       <TopBar session={session.data} title="Vending Machine" />
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-6 px-4 pb-24">
         <div className="flex justify-end mb-6">
           <TooltipProvider>
             <Tooltip>
@@ -198,46 +203,92 @@ export default function VendingMachinePage() {
             </Tooltip>
           </TooltipProvider>
         </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleCheckboxChange(item.id)}
-              className="cursor-pointer"
-            >
-              <Card className="flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`item-${item.id}`}
-                      checked={selectedItems.includes(item.id)}
-                      onCheckedChange={() => handleCheckboxChange(item.id)}
-                    />
-                    <CardTitle className="flex items-center">
-                      <item.icon className="mr-2 h-6 w-6" />
+        <div className="container mx-auto py-6 px-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((item) => (
+              <Card
+                key={item.id}
+                className="overflow-hidden transition-all hover:shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold flex items-center">
+                      <item.icon className="mr-2 h-6 w-6 text-primary" />
                       {item.name}
                     </CardTitle>
+                    <CardDescription className="text-lg font-bold text-primary">
+                      ₹{item.price}
+                    </CardDescription>
                   </div>
-                  <CardDescription>₹{item.price}</CardDescription>
                 </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between bg-muted p-2 rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary hover:text-primary-foreground hover:bg-primary"
+                      onClick={() => handleQuantityChange(item.id, -1)}
+                      disabled={!selectedItems[item.id]}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="text-lg font-medium w-12 text-center">
+                      {selectedItems[item.id] || 0}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary hover:text-primary-foreground hover:bg-primary"
+                      onClick={() => handleQuantityChange(item.id, 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {selectedItems[item.id] > 0 && (
+                    <div className="mt-2 text-right text-sm font-medium text-muted-foreground">
+                      Subtotal: ₹{item.price * selectedItems[item.id]}
+                    </div>
+                  )}
+                </CardContent>
               </Card>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        <div className="mt-6 flex justify-end">
-          <Button
-            disabled={selectedItems.length === 0}
-            onClick={() => setIsConfirmDialogOpen(true)}
-          >
-            Confirm Selection
-          </Button>
-        </div>
-
+        {orders.length > 0 && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ShoppingCart className="h-6 w-6" />
+                <span>Recent Orders</span>
+              </CardTitle>
+              <CardDescription>Your order history</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[200px]">
+                {orders.map((order, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 border-b last:border-b-0"
+                  >
+                    <div>
+                      <p className="font-medium">{order.items.join(", ")}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Status: {order.status}
+                      </p>
+                    </div>
+                    <p className="font-medium">₹{order.total}</p>
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
         <Dialog
           open={isConfirmDialogOpen}
-          onOpenChange={setIsConfirmDialogOpen}
+          onOpenChange={(open) => {
+            setIsConfirmDialogOpen(open);
+            setIsConfirmed(false);
+          }}
         >
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader className="space-y-1.5">
@@ -247,15 +298,17 @@ export default function VendingMachinePage() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
-              {selectedItems.map((itemId) => {
-                const item = items.find((i) => i.id === itemId);
+              {Object.entries(selectedItems).map(([itemId, quantity]) => {
+                const item = items.find((i) => i.id === parseInt(itemId));
                 return (
                   <div
                     key={itemId}
                     className="flex justify-between items-center text-sm"
                   >
-                    <span>{item.name}</span>
-                    <span>₹{item.price}</span>
+                    <span>
+                      {item.name} x{quantity}
+                    </span>
+                    <span>₹{item.price * quantity}</span>
                   </div>
                 );
               })}
@@ -302,30 +355,32 @@ export default function VendingMachinePage() {
                   </div>
                 </div>
               )}
-
-              <div className="flex items-center">
+              <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="confirm-deduction"
-                  checked={isChecked}
-                  onCheckedChange={setIsChecked}
+                  id="confirm-purchase"
+                  checked={isConfirmed}
+                  onCheckedChange={setIsConfirmed}
                 />
-                <Label
-                  htmlFor="confirm-deduction"
-                  className="ml-2 flex items-center text-red-500"
+                <label
+                  htmlFor="confirm-purchase"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  I agree that this will deduct ₹{totalCost} from my account.
-                </Label>
+                  I confirm that this will deduct ₹{totalCost} from my account.
+                </label>
               </div>
             </div>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setIsConfirmDialogOpen(false)}
+                onClick={() => {
+                  setIsConfirmDialogOpen(false);
+                  setIsConfirmed(false);
+                }}
               >
                 Cancel
               </Button>
               <Button
-                disabled={totalCost > walletBalance || !isChecked}
+                disabled={totalCost > walletBalance || !isConfirmed}
                 onClick={handlePurchase}
               >
                 Confirm Purchase
@@ -333,35 +388,84 @@ export default function VendingMachinePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {orders.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <ShoppingCart className="h-6 w-6" />
-                <span>Recent Orders</span>
-              </CardTitle>
-              <CardDescription>Your order history</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[200px]">
-                {orders.map((order, index) => (
+      </div>
+      {/* Bottom Bar Cart */}
+      <div className="fixed bottom-0 left-0 right-0 bg-primary text-primary-foreground shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="secondary"
+              className="text-primary hover:text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={() => setIsCartOpen(!isCartOpen)}
+            >
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              {Object.values(selectedItems).reduce((a, b) => a + b, 0)} items
+            </Button>
+            <div className="flex items-center">
+              <span className="font-semibold mr-4 text-lg">
+                Total: ₹{totalCost}
+              </span>
+              <Button
+                variant="secondary"
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                onClick={() => setIsConfirmDialogOpen(true)}
+                disabled={Object.keys(selectedItems).length === 0}
+              >
+                Place Order
+              </Button>
+            </div>
+          </div>
+        </div>
+        {isCartOpen && (
+          <div className="container mx-auto px-4 py-4 bg-background border-t border-primary/20">
+            <ScrollArea className="h-48">
+              {Object.entries(selectedItems).map(([itemId, quantity]) => {
+                const item = items.find((i) => i.id === parseInt(itemId));
+                return (
                   <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border-b last:border-b-0"
+                    key={itemId}
+                    className="flex items-center justify-between py-2 border-b border-primary/10 last:border-b-0"
                   >
-                    <div>
-                      <p className="font-medium">{order.items.join(", ")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Status: {order.status}
-                      </p>
+                    <div className="flex items-center">
+                      <item.icon className="h-5 w-5 mr-2 text-primary" />
+                      <span className="text-foreground">{item.name}</span>
                     </div>
-                    <p className="font-medium">₹{order.total}</p>
+                    <div className="flex items-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:text-primary-foreground hover:bg-primary"
+                        onClick={() =>
+                          handleQuantityChange(parseInt(itemId), -1)
+                        }
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="mx-2 text-foreground">{quantity}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:text-primary-foreground hover:bg-primary"
+                        onClick={() =>
+                          handleQuantityChange(parseInt(itemId), 1)
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <span className="ml-4 w-16 text-right text-foreground">
+                        ₹{item.price * quantity}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                );
+              })}
+            </ScrollArea>
+            <Separator className="my-4 bg-primary/20" />
+            <div className="flex justify-between items-center font-semibold text-lg">
+              <span className="text-foreground">Total</span>
+              <span className="text-primary">₹{totalCost}</span>
+            </div>
+          </div>
         )}
       </div>
     </>
