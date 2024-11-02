@@ -201,22 +201,28 @@ export default function VendingMachinePage() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {items.map((item) => (
-            <Card key={item.id} className="flex flex-col">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`item-${item.id}`}
-                    checked={selectedItems.includes(item.id)}
-                    onCheckedChange={() => handleCheckboxChange(item.id)}
-                  />
-                  <CardTitle className="flex items-center">
-                    <item.icon className="mr-2 h-6 w-6" />
-                    {item.name}
-                  </CardTitle>
-                </div>
-                <CardDescription>₹{item.price}</CardDescription>
-              </CardHeader>
-            </Card>
+            <div
+              key={item.id}
+              onClick={() => handleCheckboxChange(item.id)}
+              className="cursor-pointer"
+            >
+              <Card className="flex flex-col">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`item-${item.id}`}
+                      checked={selectedItems.includes(item.id)}
+                      onCheckedChange={() => handleCheckboxChange(item.id)}
+                    />
+                    <CardTitle className="flex items-center">
+                      <item.icon className="mr-2 h-6 w-6" />
+                      {item.name}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>₹{item.price}</CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           ))}
         </div>
 
@@ -266,7 +272,7 @@ export default function VendingMachinePage() {
                 ) : (
                   <ChevronDownCircle />
                 )}
-                Balance Summary
+                Order Summary
               </Button>
               {isBalanceSummaryOpen && (
                 <div className="bg-muted/20 rounded-lg">
