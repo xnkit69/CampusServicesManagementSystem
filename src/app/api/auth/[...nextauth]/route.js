@@ -12,7 +12,7 @@ const handler = NextAuth({
     async signIn({ account, profile }) {
       if (account.provider === "google") {
         const emailDomain = profile.email.split("@")[1];
-        return emailDomain === "mbcet.ac.in";
+        return emailDomain === "gmail.com";
       }
       return true;
     },
